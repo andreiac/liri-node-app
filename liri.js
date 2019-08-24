@@ -1,146 +1,183 @@
 require("dotenv").config();
-
-
+var Spotify = require("node-spotify-api");
 var keys = require("./keys.js");
-
-var TV = require("./liri-2.js");
-
-
 var spotify = new Spotify(keys.spotify);
+var request = require("request");
+var moment = require("moment");
+var fs = require("fs");
 
 var operator= process.argv[2];
-//ari: what does the 'join' do?
-//it combines the words to make a string, adds everything to o
-var searchTerm=process.argv.slice(3).join(" ");
 
-// anything after the operator is the command
+
 if (operator!="concert-this"&& operator!="spotify-this-song"&& operator!="movie-this"&& operator!="do-what-it-says"){
     operator="do-what-it-says"
 }
-//if show find show information
-if (operator == "concert-this"){
-    tv.findShow(searchTerm);
 
-
-    console.log("you are searching for a tv show called ", searchTerm)
-}
-//if actor find actor information
-
- else if (operator == "actor"){
-    tv.findActor(searchTerm);
-
-
-    console.log("you are searching for an actor named ", searchTerm)
-}
-else{
-    console.log("Invalid command")
-}
-
-//prints information to console.
-
-//adds information to text file
-
-/* Make it so liri.js can take in one of the following commands:
-
-concert-this
-spotify-this-song
-movie-this
-do-what-it-says
-
-What Each Command Should Do
-
-
-node liri.js concert-this <artist/band name here>
-
-
-
-
-This will search the Bands in Town Artist Events API ("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp") for an artist and render the following information about each event to the terminal:
-
-
-Name of the venue
-Venue location
-Date of the Event (use moment to format this as "MM/DD/YYYY")
-
-
-
-
-
-node liri.js spotify-this-song '<song name here>'
-
-
-
-
-This will show the following information about the song in your terminal/bash window
-
-
-Artist(s)
-The song's name
-A preview link of the song from Spotify
-The album that the song is from
-
-
-If no song is provided then your program will default to "The Sign" by Ace of Base.
-You will utilize the node-spotify-api package in order to retrieve song information from the Spotify API.
-The Spotify API requires you sign up as a developer to generate the necessary credentials. You can follow these steps in order to generate a client id and client secret:
-Step One: Visit https://developer.spotify.com/my-applications/#!/
-Step Two: Either login to your existing Spotify account or create a new one (a free account is fine) and log in.
-Step Three: Once logged in, navigate to https://developer.spotify.com/my-applications/#!/applications/create to register a new application to be used with the Spotify API. You can fill in whatever you'd like for these fields. When finished, click the "complete" button.
-Step Four: On the next screen, scroll down to where you see your client id and client secret. Copy these values down somewhere, you'll need them to use the Spotify API and the node-spotify-api package.
-
-
-
-node liri.js movie-this '<movie name here>'
-
-
-
-
-This will output the following information to your terminal/bash window:
-
-   * Title of the movie.
-   * Year the movie came out.
-   * IMDB Rating of the movie.
-   * Rotten Tomatoes Rating of the movie.
-   * Country where the movie was produced.
-   * Language of the movie.
-   * Plot of the movie.
-   * Actors in the movie.
-
-
-If the user doesn't type a movie in, the program will output data for the movie 'Mr. Nobody.'
-
-
-If you haven't watched "Mr. Nobody," then you should: http://www.imdb.com/title/tt0485947/
-
-It's on Netflix!
-
-
-You'll use the axios package to retrieve data from the OMDB API. Like all of the in-class activities, the OMDB API requires an API key. You may use trilogy.
-
-
-
-node liri.js do-what-it-says
-
-
-
-
-Using the fs Node package, LIRI will take the text inside of random.txt and then use it to call one of LIRI's commands.
-
-
-It should run spotify-this-song for "I Want it That Way," as follows the text in random.txt.
-Edit the text in random.txt to test out the feature for movie-this and concert-this.
-
-
-
-
-
-BONUS
-
-
-In addition to logging the data to your terminal/bash window, output the data to a .txt file called log.txt.
-Make sure you append each command you run to the log.txt file. 
-Do not overwrite your file each time you run a command.
-
-
-
-*/
+if (operator === "concert-this"){
+   var artist=process.argv.slice(3).join(" ");
+
+   request("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp", function (error, response, res) {
+
+      if (!error && response.statusCode === 200) {
+          console.log("-------------------------------------");
+          console.log("Venue: " + JSON.parse(res)[0].venue.name);
+          console.log("Location: " + JSON.parse(res)[0].venue.city + " " + JSON.parse(res)[0].venue.region);
+          console.log("Date: " + moment(JSON.parse(res)[0].datetime).format("MM/DD/YYYY"));
+          console.log("-------------------------------------");
+      }
+  });
+
+
+    console.log("you are searching for a band called ", artist)
+   } 
+   
+   else if (operator === "spotify-this-song") {
+      var song=process.argv.slice(3).join(" ");
+
+      if (song === undefined) {
+          song = "The Sign";
+      }
+  
+      spotify.search({
+          type: "track",
+          query: song
+      }, function (err, data) {
+          if (err) {
+              return console.log("Error occured: " + err);
+          }
+          console.log("-------------------------------------");
+          console.log("Artist: " + data.tracks.items[0].artists[0].name);
+          console.log("Song Name: " + data.tracks.items[0].name);
+          console.log("Preview Link: " + data.tracks.items[0].preview_url);
+          console.log("Album: " + data.tracks.items[0].album.name);
+          console.log("-------------------------------------");
+      });
+  
+  
+  } 
+  else if (operator === "movie-this") {
+  
+   var movie=process.argv.slice(3).join(" ");
+  
+      if (movie === undefined) {
+          movie = "Mr. Nores";
+      }
+  
+      request("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&apikey=trilogy", function (error, response, res) {
+  
+          if (!error) {
+  
+              // Information about Movie
+              console.log("-------------------------------------");
+              console.log("Title: " + JSON.parse(res).Title);
+              console.log("Year Released: " + JSON.parse(res).Year);
+              console.log("IMDB Rating: " + JSON.parse(res).imdbRating);
+              console.log("Rotten Tomatoes Rating: " + JSON.parse(res).Ratings[1].Value);
+              console.log("Country Produced: " + JSON.parse(res).Country);
+              console.log("Language: " + JSON.parse(res).Language);
+              console.log("Plot: " + JSON.parse(res).Plot);
+              console.log("Actors: " + JSON.parse(res).Actors);
+              console.log("-------------------------------------");
+          }
+      });
+  
+  } else if (operator === "do-what-it-says") {
+  
+      fs.readFile("random.txt", "utf8", function (error, data) {
+  
+          if (error) {
+              return console.log(error);
+          }
+  
+          console.log(data);
+          var dataArr = data.split(",");
+          console.log(dataArr);
+  
+          operator = dataArr[0];
+          whatTooperator = dataArr[1];
+  
+          if (operator === "concert-this") {
+  
+              var artist = whatTooperator;
+  
+              request("https://rest.bandsintown.com/artists/" + artist + "/events?app_id=codingbootcamp", function (error, response, res) {
+  
+                  if (!error && response.statusCode === 200) {
+                      console.log("-------------------------------------");
+                      console.log("Venue: " + JSON.parse(res)[0].venue.name);
+                      console.log("Location: " + JSON.parse(res)[0].venue.city + " " + JSON.parse(res)[0].venue.region);
+                      console.log("Date: " + moment(JSON.parse(res)[0].datetime).format("MM/DD/YYYY"));
+                      console.log("-------------------------------------");
+                  }
+              });
+  
+  
+              // IF WILDCARD want to know about a SONG
+          } else if (operator === "spotify-this-song") {
+              var song = whatTooperator;
+  
+              if (song === undefined) {
+                  song = "The Sign";
+              }
+  
+              spotify.search({
+                  type: "track",
+                  query: song
+              }, function (err, data) {
+                  if (err) {
+                      return console.log("Error occured: " + err);
+                  }
+                  console.log(data.tracks.items[0].album[0]);
+                  // console.log("-------------------------------------");
+                  // console.log("operator: ", operator, ", Song Name: ", song);
+                  // console.log("Artist: " + data);
+                  // console.log("Song Name: " + data);
+                  // console.log("Preview Link: " + data);
+                  // console.log("Album: " + data);
+                  // console.log("-------------------------------------");
+              });
+  
+  
+              // IF WILDCARD wants to know about a MOVIE
+          } else if (operator === "movie-this") {
+  
+              var movie = whatTooperator;
+  
+              if (movie === undefined) {
+                  movie = "Mr. Nobody";
+              }
+  
+              request("http://www.omdbapi.com/?t=" + movie + "&y=&plot=short&apikey=trilogy", function (error, response, res) {
+  
+                  if (!error && response.statusCode === 200) {
+  
+                      // Information about Movie
+                      console.log("-------------------------------------");
+                      console.log("Title: " + JSON.parse(res).Title);
+                      console.log("Year Released: " + JSON.parse(res).Year);
+                      console.log("IMDB Rating: " + JSON.parse(res).imdbRating);
+                      console.log("Rotten Tomatoes Rating: " + JSON.parse(res).Ratings[1].Value);
+                      console.log("Country Produced: " + JSON.parse(res).Country);
+                      console.log("Language: " + JSON.parse(res).Language);
+                      console.log("Plot: " + JSON.parse(res).Plot);
+                      console.log("Actors: " + JSON.parse(res).Actors);
+                      console.log("-------------------------------------");
+                  }
+              });
+  
+  
+              // IF operator not entered or incorrectly entered
+          } else {
+              console.log("operator Error");
+          }
+  
+          console.log("-------------------------------------");
+          console.log("operator: ", operator);
+          console.log("-------------------------------------");
+      });
+  
+  
+      // IF operator not entered or incorrectly entered
+  } else {
+      console.log("operator Error");
+  }
