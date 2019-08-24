@@ -1,8 +1,44 @@
 require("dotenv").config();
 
+
 var keys = require("./keys.js");
 
+var TV = require("./liri-2.js");
+
+
 var spotify = new Spotify(keys.spotify);
+
+var operator= process.argv[2];
+//ari: what does the 'join' do?
+//it combines the words to make a string, adds everything to o
+var searchTerm=process.argv.slice(3).join(" ");
+
+// anything after the operator is the command
+if (operator!="concert-this"&& operator!="spotify-this-song"&& operator!="movie-this"&& operator!="do-what-it-says"){
+    operator="do-what-it-says"
+}
+//if show find show information
+if (operator == "concert-this"){
+    tv.findShow(searchTerm);
+
+
+    console.log("you are searching for a tv show called ", searchTerm)
+}
+//if actor find actor information
+
+ else if (operator == "actor"){
+    tv.findActor(searchTerm);
+
+
+    console.log("you are searching for an actor named ", searchTerm)
+}
+else{
+    console.log("Invalid command")
+}
+
+//prints information to console.
+
+//adds information to text file
 
 /* Make it so liri.js can take in one of the following commands:
 
